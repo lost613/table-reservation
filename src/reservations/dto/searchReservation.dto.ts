@@ -7,4 +7,7 @@ export class SearchReservationDto {
 
   @Field({ nullable: true })
   status?: 'Requested' | 'Approved' | 'Cancelled' | 'Completed';
+
+  @Field({ nullable: true })
+  user?: string;
 }

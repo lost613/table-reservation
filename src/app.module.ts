@@ -10,11 +10,18 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './guards/auth.guard';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ClsModule } from 'nestjs-cls';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    ClsModule.forRoot({
+      global: true,
+      middleware: {
+        mount: true,
+      },
     }),
     JwtModule.registerAsync({
       inject: [ConfigService],

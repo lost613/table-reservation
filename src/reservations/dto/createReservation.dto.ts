@@ -8,6 +8,6 @@ export class CreateReservationDto {
   @Field()
   expectedArrivalTime: string;
 
-  @Field()
+  @Field({ defaultValue: '' })
   user: string;
 }

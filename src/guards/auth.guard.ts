@@ -10,6 +10,7 @@ import { Request } from 'express';
 import { SetMetadata } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
+import { ClsService } from 'nestjs-cls';
 
 export const IS_PUBLIC_KEY = 'isPublic';
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
@@ -19,6 +20,7 @@ export class AuthGuard implements CanActivate {
   constructor(
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly clsService: ClsService,
     private readonly reflector: Reflector,
   ) {}
 
@@ -45,7 +47,8 @@ export class AuthGuard implements CanActivate {
       });
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
-      request['user'] = payload;
+      this.clsService.set('user', payload);
+      // request['user'] = payload;
     } catch {
       throw new UnauthorizedException();
     }

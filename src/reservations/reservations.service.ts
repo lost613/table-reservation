@@ -38,8 +38,11 @@ export class ReservationsService {
   }
 
   async findAll(searchReservationDto): Promise<Reservation[]> {
-    const filter: { expectedArrivalTime?: { $like: string }; status?: string } =
-      {};
+    const filter: {
+      expectedArrivalTime?: { $like: string };
+      status?: string;
+      user?: string;
+    } = {};
     if (searchReservationDto?.expectedArrivalTime) {
       filter.expectedArrivalTime = {
         $like: `%${new Date(searchReservationDto.expectedArrivalTime).toISOString().substring(0, 10)}%`,
@@ -47,6 +50,9 @@ export class ReservationsService {
     }
     if (searchReservationDto?.status) {
       filter.status = searchReservationDto.status;
+    }
+    if (searchReservationDto?.user) {
+      filter.user = searchReservationDto.user;
     }
     const result = await this.couchbase.findReservations(filter, {
       lean: true,

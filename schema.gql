@@ -33,6 +33,7 @@ type Query {
 input SearchReservationDto {
   expectedArrivalTime: String
   status: String
+  user: String
 }
 
 type Mutation {
@@ -44,7 +45,7 @@ type Mutation {
 input CreateReservationDto {
   tableSize: Float!
   expectedArrivalTime: String!
-  user: String!
+  user: String! = ""
 }
 
 input UpdateReservationDto {
