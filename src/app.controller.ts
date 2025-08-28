@@ -5,11 +5,13 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { AppService } from './app.service';
 import { CreateUserDto } from './dto/createUser.dto';
 import { SendCodeDto } from './dto/sendCode.dto';
 import { LoginDto } from './dto/login.dto';
+import { Public } from 'src/guards/auth.guard';
 
+@Public()
 @UsePipes(
   new ValidationPipe({
     whitelist: true,
@@ -17,8 +19,8 @@ import { LoginDto } from './dto/login.dto';
   }),
 )
 @Controller()
-export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+export class AppController {
+  constructor(private readonly usersService: AppService) {}
 
   @Post('code')
   async sendCode(@Body() sendCodeDto: SendCodeDto): Promise<string> {
@@ -28,12 +30,12 @@ export class UsersController {
   @Post('register')
   async register(
     @Body() createUserDto: CreateUserDto,
-  ): Promise<{ token: string }> {
+  ): Promise<{ access_token: string }> {
     return await this.usersService.register(createUserDto);
   }
 
   @Post('login')
-  async login(@Body() loginDto: LoginDto): Promise<{ token: string }> {
+  async login(@Body() loginDto: LoginDto): Promise<{ access_token: string }> {
     const { phone, code } = loginDto;
     return await this.usersService.login(phone, code);
   }

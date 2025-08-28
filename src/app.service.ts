@@ -1,9 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { CouchbaseService } from 'src/couchbase/couchbase.service';
 
 @Injectable()
-export class UsersService {
-  constructor(private readonly couchbase: CouchbaseService) {}
+export class AppService {
+  constructor(
+    private readonly couchbase: CouchbaseService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   generateCode(len = 6) {
     const code: number[] = [];
@@ -24,7 +28,7 @@ export class UsersService {
       throw new BadRequestException('phone number not registered');
     }
     if (await this.couchbase.checkCodeByPhone(phone, code)) {
-      return { token: 'sss' };
+      return await this.generateToken(data);
     }
     throw new BadRequestException('incorrect verification code');
   }
@@ -36,8 +40,17 @@ export class UsersService {
     if (await this.couchbase.checkCodeByPhone(user.phone, user.code)) {
       delete user.code;
       const data = await this.couchbase.createUser(user);
-      return { token: 'sss' };
+      return await this.generateToken(data);
     }
     throw new BadRequestException('incorrect verification code');
+  }
+
+  async generateToken(user) {
+    const payload = {
+      sub: user.id,
+      username: user.phone,
+      isEmployee: !!user.isEmployee,
+    };
+    return { access_token: await this.jwtService.signAsync(payload) };
   }
 }
