@@ -27,7 +27,7 @@ type Reservation {
 
 type Query {
   reservation(id: String!): Reservation!
-  reservations(searchReservationDto: SearchReservationDto!): [Reservation!]!
+  reservations(searchReservationDto: SearchReservationDto): [Reservation!]!
 }
 
 input SearchReservationDto {

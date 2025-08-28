@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - couchbase
+    restart: unless-stopped
+
+  couchbase:
+    image: couchbase:community
+    ports:
+      - "8091-8094:8091-8094"
+      - "11210:11210"
+    volumes:
+      - ./db:/opt/couchbase/var
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8091/pools"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped

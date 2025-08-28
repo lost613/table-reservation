@@ -23,11 +23,12 @@ export class ReservationsResolver {
 
   @Query((returns) => [Reservation])
   async reservations(
-    @Args('searchReservationDto') searchReservationDto: SearchReservationDto,
+    @Args('searchReservationDto', { nullable: true })
+    searchReservationDto?: SearchReservationDto,
   ): Promise<Reservation[]> {
     this.logger.debug('reservations');
     const user = this.clsService.get('user');
-    if (!user.isEmployee) {
+    if (!user.isEmployee && searchReservationDto) {
       searchReservationDto.user = user.sub;
     }
     return await this.reservationsService.findAll(searchReservationDto);
