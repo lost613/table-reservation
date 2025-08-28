@@ -106,27 +106,6 @@ export class CouchbaseService {
     }
   }
 
-  async updateUserById(id, update, options?: FindOneAndUpdateOption) {
-    this.logger.debug('updateUserById', { id, update, options });
-    const data = await this.findUserById(id);
-    if (!data) {
-      throw new BadRequestException(`the reservation id[${id}] not exists`);
-    }
-    const fields = ['expectedArrivalTime', 'tableSize', 'status'];
-    const updateObj = {};
-    for (const field of fields) {
-      if (field in update) {
-        updateObj[field] = update[field];
-      }
-    }
-    const result = await this.ReservationModel.findOneAndUpdate(
-      { id },
-      { ...updateObj, ...this.generateDate() },
-      options,
-    );
-    return result;
-  }
-
   async createReservation(reservation, options?: saveOptions) {
     this.logger.debug('createReservation', { reservation, options });
     const result = await this.ReservationModel.create(
