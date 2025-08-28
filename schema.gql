@@ -1,0 +1,54 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""user"""
+type User {
+  id: String!
+  name: String!
+  phone: String!
+  email: String
+  gender: String
+  isEmployee: Boolean
+  created: String!
+  updated: String!
+}
+
+"""reservation"""
+type Reservation {
+  id: String!
+  user: User!
+  tableSize: Float!
+  expectedArrivalTime: String!
+  status: String!
+  created: String!
+  updated: String!
+}
+
+type Query {
+  reservation(id: String!): Reservation!
+  reservations(searchReservationDto: SearchReservationDto!): [Reservation!]!
+}
+
+input SearchReservationDto {
+  expectedArrivalTime: String
+  status: String
+}
+
+type Mutation {
+  addReservation(createReservationDto: CreateReservationDto!): Reservation!
+  editReservation(id: String!, updateReservationDto: UpdateReservationDto!): Reservation!
+  removeReservation(id: String!): Boolean!
+}
+
+input CreateReservationDto {
+  tableSize: Float!
+  expectedArrivalTime: String!
+  user: String!
+}
+
+input UpdateReservationDto {
+  tableSize: Float
+  expectedArrivalTime: String
+  status: String
+}
