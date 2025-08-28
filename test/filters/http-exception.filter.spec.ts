@@ -1,4 +1,4 @@
-import { HttpExceptionFilter } from 'src/filter/http-exception.filter';
+import { HttpExceptionFilter } from 'src/filters/http-exception.filter';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ArgumentsHost } from '@nestjs/common/interfaces';
 import { GqlContextType } from '@nestjs/graphql';
