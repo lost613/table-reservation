@@ -11,17 +11,11 @@ interface RegisterParams {
   email?: string;
 }
 
-interface ApiResponse<T> {
-  code: number;
-  message: string;
-  data: T;
-}
-
 // 基础 API URL - 使用环境变量
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 // 统一处理请求
-async function request<T>(url: string, options: RequestInit): Promise<ApiResponse<T>> {
+async function request<T>(url: string, options: RequestInit): Promise<T> {
   try {
     const response = await fetch(`${BASE_URL}${url}`, {
       ...options,
@@ -44,14 +38,14 @@ async function request<T>(url: string, options: RequestInit): Promise<ApiRespons
 }
 
 export async function login(params: LoginParams) {
-  return request<{ token: string }>('/auth/login', {
+  return request<{ access_token: string }>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(params),
   });
 }
 
 export async function register(params: RegisterParams) {
-  return request<{ token: string }>('/auth/register', {
+  return request<{ access_token: string }>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(params),
   });
