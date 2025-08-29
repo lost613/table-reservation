@@ -50,7 +50,18 @@ export class ReservationsResolver {
     @Args('updateReservationDto') updateReservationDto: UpdateReservationDto,
   ) {
     this.logger.debug('editReservation', { id, updateReservationDto });
-    await this.checkAndGetReservation(id);
+    const reservation = await this.checkAndGetReservation(id);
+    const user = this.clsService.get('user');
+    if (!user.isEmployee && reservation.status !== 'Requested') {
+      for (const key in updateReservationDto) {
+        if (
+          key in reservation &&
+          updateReservationDto[key] !== reservation[key]
+        ) {
+          updateReservationDto.status = 'Requested';
+        }
+      }
+    }
     return await this.reservationsService.updateById(id, updateReservationDto);
   }
 

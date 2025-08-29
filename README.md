@@ -1,98 +1,224 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Table Reservation System
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+一个基于 NestJS (后端) 和 SolidJS (前端) 的餐桌预订系统，使用 Couchbase 作为数据库，支持 Docker 部署。
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 项目结构
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
-```bash
-$ pnpm install
+```
+table-reservation/
+├── backend/          # NestJS 后端服务
+├── frontend/         # SolidJS 前端应用
+├── db/              # Couchbase 数据库文件
+├── docker-compose.yml
+└── package.json     # 根目录脚本管理
 ```
 
-## Compile and run the project
+## 技术栈
+
+- **后端**: NestJS, GraphQL, TypeScript
+- **前端**: SolidJS, TypeScript, Vite
+- **数据库**: Couchbase
+- **容器化**: Docker, Docker Compose
+- **包管理**: PNPM
+
+## 快速开始
+
+### 前置要求
+
+- Node.js (推荐 LTS 版本)
+- PNPM
+- Docker 和 Docker Compose (可选，用于容器化部署)
+
+### 安装依赖
 
 ```bash
-# development
-$ pnpm run start
+# 安装所有依赖 (前端 + 后端)
+pnpm install:all
 
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+# 或分别安装
+pnpm install:backend  # 仅安装后端依赖
+pnpm install:frontend # 仅安装前端依赖
 ```
 
-## Run tests
+### 开发环境运行
 
 ```bash
-# unit tests
-$ pnpm run test
+# 同时启动前后端开发服务器
+pnpm start:all
 
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+# 或分别启动
+pnpm start:backend   # 启动后端开发服务器
+pnpm start:frontend  # 启动前端开发服务器
 ```
 
-## Deployment
+访问地址：
+- 前端应用: http://localhost:3000 (SolidJS)
+- 后端API: http://localhost:4000
+- GraphQL Playground: http://localhost:4000/graphql
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 构建项目
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+# 构建所有项目
+pnpm build:all
+
+# 或分别构建
+pnpm build:backend   # 构建后端
+pnpm build:frontend  # 构建前端
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 运行测试
 
-## Resources
+```bash
+# 运行所有测试
+pnpm test:all
 
-Check out a few resources that may come in handy when working with NestJS:
+# 或分别运行
+pnpm test:backend    # 运行后端测试
+pnpm test:frontend   # 运行前端测试
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Docker 部署
 
-## Support
+### 使用 Docker Compose
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+# 构建 Docker 镜像
+pnpm docker:build
 
-## Stay in touch
+# 启动所有服务 (后台运行)
+pnpm docker:up
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# 停止并移除容器
+pnpm docker:down
+```
 
-## License
+### 手动 Docker 命令
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+# 构建并启动
+docker-compose up --build
+
+# 仅启动 (使用已构建的镜像)
+docker-compose up
+
+# 后台运行
+docker-compose up -d
+
+# 停止服务
+docker-compose down
+
+# 停止并移除数据卷
+docker-compose down -v
+```
+
+## 项目功能
+
+### 后端功能 (NestJS)
+- 用户认证和授权
+- 餐桌预订管理
+- GraphQL API
+- Couchbase 数据库集成
+- JWT 认证
+- 数据验证和错误处理
+
+### 前端功能 (SolidJS)
+- 用户界面
+- 预订管理
+- 响应式设计
+- 与后端 API 集成
+
+## 开发指南
+
+### 后端开发
+
+```bash
+cd backend
+
+# 开发模式启动
+pnpm start:dev
+
+# 生产模式启动
+pnpm start:prod
+
+# 监视模式启动
+pnpm start:debug
+```
+
+### 前端开发
+
+```bash
+cd frontend
+
+# 开发服务器
+pnpm dev
+
+# 构建生产版本
+pnpm build
+
+# 预览生产构建
+pnpm preview
+```
+
+## 环境变量
+
+### 后端环境变量
+创建 `backend/.env` 文件：
+
+```env
+# 数据库配置
+COUCHBASE_CONNECT_OPTIONS=couchbase://localhost/table-reservation@admin:123456
+
+# JWT 配置
+JWT_SECRET=your-jwt-secret
+JWT_EXPIRES_IN=7d
+
+# 应用配置
+PORT=4000
+NODE_ENV=development
+```
+
+### 前端环境变量
+创建 `frontend/.env` 文件：
+
+```env
+VITE_API_URL=/api
+```
+
+## API 文档
+
+### GraphQL
+访问 http://localhost:4000/graphql 查看 GraphQL Playground 和 API 文档。
+
+### 主要端点
+- `POST /auth/login` - 用户登录
+- `POST /auth/register` - 用户注册
+- GraphQL endpoint: `/graphql`
+
+## 故障排除
+
+### 常见问题
+
+1. **端口冲突**
+   - 确保端口 4000 (后端) 和 3000 (前端) 未被占用
+   - SolidJS 开发服务器默认运行在 3000 端口
+
+2. **依赖安装失败**
+   ```bash
+   # 清除缓存并重新安装
+   pnpm store prune
+   pnpm install:all
+   ```
+
+3. **Couchbase 连接问题**
+   - 确保 Couchbase 服务正在运行
+   - 检查环境变量配置
+
+4. **Docker 问题**
+   ```bash
+   # 重新构建镜像
+   docker-compose build --no-cache
+   
+   # 清理未使用的容器和镜像
+   docker system prune
+   ```

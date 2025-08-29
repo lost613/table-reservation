@@ -21,6 +21,11 @@ type Reservation {
   tableSize: Float!
   expectedArrivalTime: String!
   status: String!
+  name: String!
+  phone: String!
+  gender: String!
+  email: String
+  comment: String
   created: String!
   updated: String!
 }
@@ -46,10 +51,20 @@ input CreateReservationDto {
   tableSize: Float!
   expectedArrivalTime: String!
   user: String! = ""
+  name: String!
+  phone: String!
+  gender: String!
+  email: String
+  comment: String
 }
 
 input UpdateReservationDto {
   tableSize: Float
   expectedArrivalTime: String
   status: String
+  name: String!
+  phone: String!
+  gender: String!
+  email: String
+  comment: String
 }

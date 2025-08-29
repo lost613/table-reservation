@@ -137,7 +137,16 @@ export class CouchbaseService {
   async updateReservationById(id, update, options?: FindOneAndUpdateOption) {
     this.logger.debug('updateReservationById', { id, update, options });
     await this.findReservationById(id);
-    const fields = ['expectedArrivalTime', 'tableSize', 'status'];
+    const fields = [
+      'expectedArrivalTime',
+      'tableSize',
+      'status',
+      'name',
+      'phone',
+      'gender',
+      'email',
+      'comment',
+    ];
     const updateObj = {};
     for (const field of fields) {
       if (field in update) {

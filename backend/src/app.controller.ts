@@ -18,11 +18,11 @@ import { Public } from 'src/guards/auth.guard';
     transformOptions: { exposeDefaultValues: false, exposeUnsetFields: false },
   }),
 )
-@Controller()
+@Controller('auth')
 export class AppController {
   constructor(private readonly usersService: AppService) {}
 
-  @Post('code')
+  @Post('send-code')
   async sendCode(@Body() sendCodeDto: SendCodeDto): Promise<string> {
     return await this.usersService.sendCode(sendCodeDto.phone);
   }

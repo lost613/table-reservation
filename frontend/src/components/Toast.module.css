@@ -1,0 +1,135 @@
+.toastOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.toastOverlay.visible {
+  opacity: 1;
+}
+
+.toast {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  max-width: 400px;
+  min-width: 280px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  transform: scale(0.9) translateY(20px);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toastOverlay.visible .toast {
+  transform: scale(1) translateY(0);
+}
+
+.toastIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: white;
+  flex-shrink: 0;
+}
+
+.toast.success .toastIcon {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.toast.error .toastIcon {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.toast.info .toastIcon {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.toastMessage {
+  flex: 1;
+  color: #1a365d;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.closeButton {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: rgba(107, 114, 128, 0.2);
+  color: #374151;
+  transform: scale(1.1);
+}
+
+/* 成功提示的边框 */
+.toast.success {
+  border-left: 4px solid #10b981;
+}
+
+/* 错误提示的边框 */
+.toast.error {
+  border-left: 4px solid #ef4444;
+}
+
+/* 信息提示的边框 */
+.toast.info {
+  border-left: 4px solid #3b82f6;
+}
+
+/* 移动端适配 */
+@media (max-width: 480px) {
+  .toast {
+    margin: 1rem;
+    min-width: auto;
+    max-width: calc(100vw - 2rem);
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .toastIcon {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+  }
+  
+  .toastMessage {
+    font-size: 0.9rem;
+  }
+}

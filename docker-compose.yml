@@ -1,14 +1,32 @@
 version: '3.8'
 
 services:
-  app:
+  frontend:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
     env_file:
-      - .env
+      - ./frontend/.env.production
     ports:
-      - "3000:3000"
+      - "3000:80"
+    networks:
+      - app-network
+    environment:
+      - VITE_API_URL=/api  # 前端 API 地址配置
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env.production
+    ports:
+      - "4000:4000"
+    networks:
+      - app-network
     environment:
       - NODE_ENV=production
     depends_on:
@@ -20,11 +38,17 @@ services:
     ports:
       - "8091-8094:8091-8094"
       - "11210:11210"
+    networks:
+      - app-network
     volumes:
-      - ./db:/opt/couchbase/var
+      - ./localDB:/opt/couchbase/var
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8091/pools"]
       interval: 30s
       timeout: 10s
       retries: 3
     restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
