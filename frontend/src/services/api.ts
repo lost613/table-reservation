@@ -7,7 +7,7 @@ interface RegisterParams {
   name: string;
   phone: string;
   code: string;
-  gender?: 'male' | 'female' | '';
+  gender?: 'M' | 'F' | '';
   email?: string;
 }
 
@@ -52,7 +52,7 @@ export async function register(params: RegisterParams) {
 }
 
 export async function sendVerificationCode(phone: string, type: 'login' | 'register') {
-  return request<{ expired: number }>('/auth/send-code', {
+  return request<{ expired: number; code: string }>('/auth/send-code', {
     method: 'POST',
     body: JSON.stringify({ phone, type }),
   });

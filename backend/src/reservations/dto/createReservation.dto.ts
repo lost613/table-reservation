@@ -10,4 +10,19 @@ export class CreateReservationDto {
 
   @Field({ defaultValue: '' })
   user: string;
+
+  @Field()
+  name: string;
+
+  @Field()
+  phone: string;
+
+  @Field()
+  gender: 'M' | 'F';
+
+  @Field({ nullable: true })
+  email?: string;
+
+  @Field({ nullable: true })
+  comment?: string;
 }

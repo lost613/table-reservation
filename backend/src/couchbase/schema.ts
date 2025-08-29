@@ -3,8 +3,8 @@ import { Schema } from 'ottoman';
 const UserSchema = new Schema({
   id: { type: String, auto: 'uuid' },
   name: { type: String, required: true },
-  gender: { type: String, required: false, enum: ['M', 'F'] },
   phone: { type: String, required: true },
+  gender: { type: String, required: false, enum: ['M', 'F'] },
   email: { type: String, required: false },
   isEmployee: { type: Boolean, required: false },
   created: { type: String, required: true },
@@ -22,6 +22,11 @@ const ReservationSchema = new Schema({
     enum: ['Requested', 'Approved', 'Cancelled', 'Completed'],
     default: 'Requested',
   },
+  name: { type: String, required: true },
+  phone: { type: String, required: true },
+  gender: { type: String, required: false, enum: ['M', 'F'] },
+  email: { type: String, required: false },
+  comment: { type: String, required: false },
   created: { type: String, required: true },
   updated: { type: String, required: true },
 });

@@ -9,6 +9,11 @@ export const GET_RESERVATIONS = gql`
       status
       created
       updated
+      name
+      phone
+      email
+      gender
+      comment
       user {
         id
         name
@@ -29,6 +34,11 @@ export const EDIT_RESERVATION = gql`
       status
       created
       updated
+      name
+      phone
+      email
+      gender
+      comment
       user {
         id
         name
@@ -37,6 +47,37 @@ export const EDIT_RESERVATION = gql`
         gender
       }
     }
+  }
+`;
+
+export const ADD_RESERVATION = gql`
+  mutation AddReservation($createReservationDto: CreateReservationDto!) {
+    addReservation(createReservationDto: $createReservationDto) {
+      id
+      tableSize
+      expectedArrivalTime
+      status
+      created
+      updated
+      name
+      phone
+      email
+      gender
+      comment
+      user {
+        id
+        name
+        phone
+        email
+        gender
+      }
+    }
+  }
+`;
+
+export const REMOVE_RESERVATION = gql`
+  mutation RemoveReservation($id: String!) {
+    removeReservation(id: $id)
   }
 `;
 
@@ -61,6 +102,11 @@ export interface Reservation {
   status: ReservationStatus;
   created: string;
   updated: string;
+  name: string;
+  phone: string;
+  email?: string;
+  gender?: string;
+  comment?: string;
 }
 
 export interface SearchReservationDto {
@@ -69,8 +115,24 @@ export interface SearchReservationDto {
   user?: string;
 }
 
+export interface CreateReservationDto {
+  tableSize: number;
+  expectedArrivalTime: string;
+  user?: string;
+  name: string;
+  phone: string;
+  gender: string;
+  email?: string;
+  comment?: string;
+}
+
 export interface UpdateReservationDto {
   tableSize?: number;
   expectedArrivalTime?: string;
   status?: string;
+  name: string;
+  phone: string;
+  gender: string;
+  email?: string;
+  comment?: string;
 }

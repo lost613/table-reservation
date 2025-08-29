@@ -4,6 +4,7 @@ import { login, register, sendVerificationCode } from '../services/api';
 import { navigate, initializeNavigation } from '../utils/navigation';
 import { useNavigate } from '@solidjs/router';
 import { jwtDecode } from 'jwt-decode';
+import { showToast } from '../utils/toast';
 
 const LoginPage: Component = () => {
   const navigateHook = useNavigate();
@@ -51,7 +52,7 @@ const LoginPage: Component = () => {
   const [registerCode, setRegisterCode] = createSignal('');
   const [registerCountdown, setRegisterCountdown] = createSignal(0);
   const [registerName, setRegisterName] = createSignal('');
-  const [registerGender, setRegisterGender] = createSignal<'male' | 'female' | ''>('');
+  const [registerGender, setRegisterGender] = createSignal<'M' | 'F' | ''>('');
   const [registerEmail, setRegisterEmail] = createSignal('');
   
   const handleSendCode = async (
@@ -60,12 +61,22 @@ const LoginPage: Component = () => {
     type: 'login' | 'register'
   ) => {
     if (!/^1[3-9]\d{9}$/.test(phone)) {
-      alert('请输入正确的手机号');
+      showToast('请输入正确的手机号', 'error');
       return;
     }
 
     try {
-      await sendVerificationCode(phone, type);
+      const response = await sendVerificationCode(phone, type);
+      
+      // 自动填入验证码
+      if (type === 'login') {
+        setLoginCode(response.code);
+      } else {
+        setRegisterCode(response.code);
+      }
+      
+      showToast('验证码已发送', 'success');
+      
       setCountdownFn(60);
       const timer = setInterval(() => {
         setCountdownFn((prev: number) => {
@@ -77,17 +88,17 @@ const LoginPage: Component = () => {
         });
       }, 1000);
     } catch (error) {
-      alert(error instanceof Error ? error.message : '发送验证码失败');
+      showToast(error instanceof Error ? error.message : '发送验证码失败', 'error');
     }
   };
 
   const handleLogin = async () => {
     if (!/^1[3-9]\d{9}$/.test(loginPhone())) {
-      alert('请输入正确的手机号');
+      showToast('请输入正确的手机号', 'error');
       return;
     }
     if (!/^\d{6}$/.test(loginCode())) {
-      alert('请输入6位验证码');
+      showToast('请输入6位验证码', 'error');
       return;
     }
 
@@ -100,29 +111,29 @@ const LoginPage: Component = () => {
       // 保存 token 到本地存储，用于后续 API 调用的 JWT 认证
       localStorage.setItem('access_token', response.access_token);
       
-      // 登录成功后跳转到预定列表页
-      alert('登录成功');
-      navigate('/reservation');
+      // 登录成功后跳转到预订列表页
+      showToast('登录成功', 'success');
+      setTimeout(() => navigate('/reservation'), 1000);
     } catch (error) {
-      alert(error instanceof Error ? error.message : '登录失败');
+      showToast(error instanceof Error ? error.message : '登录失败', 'error');
     }
   };
 
   const handleRegister = async () => {
     if (!registerName().trim()) {
-      alert('请输入姓名');
+      showToast('请输入姓名', 'error');
       return;
     }
     if (!/^1[3-9]\d{9}$/.test(registerPhone())) {
-      alert('请输入正确的手机号');
+      showToast('请输入正确的手机号', 'error');
       return;
     }
     if (!/^\d{6}$/.test(registerCode())) {
-      alert('请输入6位验证码');
+      showToast('请输入6位验证码', 'error');
       return;
     }
     if (registerEmail().trim() && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(registerEmail())) {
-      alert('请输入正确的邮箱地址（如果填写）');
+      showToast('请输入正确的邮箱地址（如果填写）', 'error');
       return;
     }
 
@@ -140,11 +151,11 @@ const LoginPage: Component = () => {
       // 保存 token 到本地存储，用于后续 API 调用的 JWT 认证
       localStorage.setItem('access_token', response.access_token);
       
-      // 注册成功后跳转到预定列表页
-      alert('注册成功');
-      navigate('/reservation');
+      // 注册成功后跳转到预订列表页
+      showToast('注册成功', 'success');
+      setTimeout(() => navigate('/reservation'), 1000);
     } catch (error) {
-      alert(error instanceof Error ? error.message : '注册失败');
+      showToast(error instanceof Error ? error.message : '注册失败', 'error');
     }
   };
 
@@ -152,9 +163,8 @@ const LoginPage: Component = () => {
     <div class={styles.loginContainer}>
       {/* 品牌头部 */}
       <div class={styles.brandHeader}>
-        <div class={styles.brandLogo}>HILTON</div>
-        <div class={styles.brandTagline}>Extraordinary Experiences Begin Here</div>
-        <div class={styles.systemTitle}>餐厅预订系统</div>
+        <div class={styles.brandLogo}>餐厅预订</div>
+        <div class={styles.systemTitle}>预订系统</div>
       </div>
 
       <div class={styles.tabContainer}>
@@ -174,7 +184,7 @@ const LoginPage: Component = () => {
 
       {isLogin() ? (
         <div class={styles.formContainer}>
-          <h2>登录</h2>
+          {/* <h2>登录</h2> */}
           <div class={styles.inputGroup}>
             <input
               type="tel"
@@ -203,7 +213,7 @@ const LoginPage: Component = () => {
         </div>
       ) : (
         <div class={styles.formContainer}>
-          <h2>注册</h2>
+          {/* <h2>注册</h2> */}
           <div class={styles.inputGroup}>
             <input
               type="text"
@@ -241,8 +251,8 @@ const LoginPage: Component = () => {
                 <input
                   type="radio"
                   name="gender"
-                  checked={registerGender() === 'male'}
-                  onChange={() => setRegisterGender('male')}
+                  checked={registerGender() === 'M'}
+                  onChange={() => setRegisterGender('M')}
                 />
                 <span>男士</span>
               </label>
@@ -250,8 +260,8 @@ const LoginPage: Component = () => {
                 <input
                   type="radio"
                   name="gender"
-                  checked={registerGender() === 'female'}
-                  onChange={() => setRegisterGender('female')}
+                  checked={registerGender() === 'F'}
+                  onChange={() => setRegisterGender('F')}
                 />
                 <span>女士</span>
               </label>

@@ -19,6 +19,21 @@ export class Reservation {
   status: 'Requested' | 'Approved' | 'Cancelled' | 'Completed';
 
   @Field()
+  name: string;
+
+  @Field()
+  phone: string;
+
+  @Field()
+  gender: 'M' | 'F';
+
+  @Field({ nullable: true })
+  email?: string;
+
+  @Field({ nullable: true })
+  comment?: string;
+
+  @Field()
   created: string;
 
   @Field()

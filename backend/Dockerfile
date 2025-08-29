@@ -37,7 +37,7 @@ RUN pnpm install --prod
 COPY --from=builder /app/dist ./dist
 
 # 暴露端口
-EXPOSE 3000
+EXPOSE 4000
 
 # 启动应用
 CMD ["npm", "run", "start:prod"]

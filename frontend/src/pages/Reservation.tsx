@@ -11,13 +11,16 @@ import { createClient, cacheExchange, fetchExchange } from "@urql/core";
 import {
   GET_RESERVATIONS,
   EDIT_RESERVATION,
+  ADD_RESERVATION,
   Reservation,
   UpdateReservationDto,
+  CreateReservationDto,
 } from "../services/graphql";
 import styles from "./Reservation.module.css";
 import { navigate, initializeNavigation } from "../utils/navigation";
 import { useNavigate } from "@solidjs/router";
 import { jwtDecode } from "jwt-decode";
+import { showToast, showConfirm } from "../utils/toast";
 
 // 创建 URQL 客户端
 const client = createClient({
@@ -43,6 +46,7 @@ const ReservationPage: Component = () => {
   const navigateHook = useNavigate();
   const [isEmployee, setIsEmployee] = createSignal(false);
   const [showEditModal, setShowEditModal] = createSignal(false);
+  const [showCreateModal, setShowCreateModal] = createSignal(false);
   const [showDetailModal, setShowDetailModal] = createSignal(false);
   const [editingReservation, setEditingReservation] =
     createSignal<Reservation | null>(null);
@@ -51,8 +55,22 @@ const ReservationPage: Component = () => {
   const [editForm, setEditForm] = createSignal({
     expectedArrivalTime: "",
     tableSize: 0,
+    name: "",
+    phone: "",
+    gender: "M",
+    email: "",
+    comment: "",
   });
-  
+  const [createForm, setCreateForm] = createSignal({
+    expectedArrivalTime: "",
+    tableSize: 1,
+    name: "",
+    phone: "",
+    gender: "M",
+    email: "",
+    comment: "",
+  });
+
   // 过滤器状态
   const [filterDate, setFilterDate] = createSignal("");
   const [filterStatus, setFilterStatus] = createSignal("");
@@ -73,6 +91,45 @@ const ReservationPage: Component = () => {
     }
   });
 
+  // 从token中获取用户信息
+  const getUserInfoFromToken = () => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        return {
+          name: decoded.name || "",
+          phone: decoded.phone || "",
+          email: decoded.email || "",
+          gender: decoded.gender || "M",
+        };
+      } catch (error) {
+        console.error("Error decoding token:", error);
+      }
+    }
+    return {
+      name: "",
+      phone: "",
+      email: "",
+      gender: "M",
+    };
+  };
+
+  // 获取当天的默认时间（今天下午6点）
+  const getDefaultDateTime = () => {
+    const now = new Date();
+    const today = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      18,
+      0
+    ); // 今天下午6点
+    const timezoneOffset = today.getTimezoneOffset();
+    const localDate = new Date(today.getTime() - timezoneOffset * 60000);
+    return localDate.toISOString().slice(0, 16);
+  };
+
   // 检查认证状态
   createEffect(() => {
     if (!localStorage.getItem("access_token")) {
@@ -89,7 +146,7 @@ const ReservationPage: Component = () => {
     const timer = setTimeout(() => {
       refetch();
     }, 300);
-    
+
     return () => clearTimeout(timer);
   });
 
@@ -98,7 +155,7 @@ const ReservationPage: Component = () => {
     async () => {
       try {
         console.log("Fetching reservations...");
-        
+
         // 构建搜索参数
         const search: any = {};
         if (filterDate()) {
@@ -108,7 +165,7 @@ const ReservationPage: Component = () => {
         if (filterStatus()) {
           search.status = filterStatus();
         }
-        
+
         const response = await client
           .query(GET_RESERVATIONS, {
             search,
@@ -140,8 +197,14 @@ const ReservationPage: Component = () => {
   );
 
   // 处理登出
-  const handleLogout = () => {
-    if (confirm("确定要退出登录吗？")) {
+  const handleLogout = async () => {
+    const confirmed = await showConfirm("确定要退出登录吗？", {
+      title: "退出登录",
+      confirmText: "退出",
+      cancelText: "取消",
+    });
+
+    if (confirmed) {
       localStorage.removeItem("access_token");
       navigate("/");
     }
@@ -160,7 +223,21 @@ const ReservationPage: Component = () => {
   // 更新预订状态
   const updateReservationStatus = async (id: string, status: string) => {
     try {
-      const updateDto: UpdateReservationDto = { status };
+      // 找到当前预订以获取用户信息
+      const currentReservation = reservations()?.find((r) => r.id === id);
+      if (!currentReservation) {
+        showToast("预订信息未找到", "error");
+        return;
+      }
+
+      const updateDto: UpdateReservationDto = {
+        status,
+        name: currentReservation.name,
+        phone: currentReservation.phone,
+        gender: currentReservation.gender || "M",
+        email: currentReservation.email || "",
+        comment: currentReservation.comment || "",
+      };
       const response = await client
         .mutation(EDIT_RESERVATION, {
           id,
@@ -170,16 +247,16 @@ const ReservationPage: Component = () => {
 
       if (response.error) {
         console.error("Error updating reservation:", response.error);
-        alert("更新失败: " + response.error.message);
+        showToast("更新失败: " + response.error.message, "error");
         return;
       }
 
       // 更新成功后刷新数据
       await refetch();
-      alert("状态更新成功");
+      showToast("状态更新成功", "success");
     } catch (error) {
       console.error("Error updating reservation:", error);
-      alert("更新失败");
+      showToast("更新失败", "error");
     }
   };
 
@@ -208,6 +285,11 @@ const ReservationPage: Component = () => {
     setEditForm({
       expectedArrivalTime: formattedDateTime,
       tableSize: reservation.tableSize,
+      name: reservation.name,
+      phone: reservation.phone,
+      gender: reservation.gender || "M",
+      email: reservation.email || "",
+      comment: reservation.comment || "",
     });
     setShowEditModal(true);
   };
@@ -216,6 +298,78 @@ const ReservationPage: Component = () => {
   const closeEditModal = () => {
     setShowEditModal(false);
     setEditingReservation(null);
+  };
+
+  // 打开新建对话框
+  const openCreateModal = () => {
+    // 从token获取用户信息作为默认值
+    const userInfo = getUserInfoFromToken();
+    const defaultDateTime = getDefaultDateTime();
+
+    setCreateForm({
+      expectedArrivalTime: defaultDateTime,
+      tableSize: 1,
+      name: userInfo.name,
+      phone: userInfo.phone,
+      gender: userInfo.gender,
+      email: userInfo.email,
+      comment: "",
+    });
+    setShowCreateModal(true);
+  };
+
+  // 关闭新建对话框
+  const closeCreateModal = () => {
+    setShowCreateModal(false);
+  };
+
+  // 保存新建预订
+  const saveCreate = async () => {
+    try {
+      // 验证必填字段
+      if (
+        !createForm().expectedArrivalTime ||
+        !createForm().name ||
+        !createForm().phone
+      ) {
+        showToast("请填写所有必填信息", "error");
+        return;
+      }
+
+      // 将 datetime-local 格式转换为 ISO 字符串格式
+      const selectedDateTime = new Date(createForm().expectedArrivalTime);
+      const isoDateTime = selectedDateTime.toISOString();
+
+      const createDto: CreateReservationDto = {
+        expectedArrivalTime: isoDateTime,
+        tableSize: createForm().tableSize,
+        name: createForm().name,
+        phone: createForm().phone,
+        gender: createForm().gender,
+        email: createForm().email,
+        comment: createForm().comment,
+      };
+
+      const response = await client
+        .mutation(ADD_RESERVATION, {
+          createReservationDto: createDto,
+        })
+        .toPromise();
+
+      if (response.error) {
+        console.error("Error creating reservation:", response.error);
+        showToast("创建失败: " + response.error.message, "error");
+        return;
+      }
+
+      // 创建成功后刷新数据并关闭对话框
+      await refetch();
+      closeCreateModal();
+      showToast("预订创建成功", "success");
+    } catch (error) {
+      console.error("Error creating reservation:", error);
+      showToast("创建失败", "error");
+    }
   };
 
   // 保存编辑
@@ -231,6 +385,11 @@ const ReservationPage: Component = () => {
       const updateDto: UpdateReservationDto = {
         expectedArrivalTime: isoDateTime,
         tableSize: editForm().tableSize,
+        name: editForm().name,
+        phone: editForm().phone,
+        gender: editForm().gender,
+        email: editForm().email,
+        comment: editForm().comment,
       };
 
       const response = await client
@@ -242,25 +401,28 @@ const ReservationPage: Component = () => {
 
       if (response.error) {
         console.error("Error updating reservation:", response.error);
-        alert("更新失败: " + response.error.message);
+        showToast("更新失败: " + response.error.message, "error");
         return;
       }
 
       // 更新成功后刷新数据并关闭对话框
       await refetch();
       closeEditModal();
-      alert("预订信息更新成功");
+      showToast("预订信息更新成功", "success");
     } catch (error) {
       console.error("Error updating reservation:", error);
-      alert("更新失败");
+      showToast("更新失败", "error");
     }
   };
 
   return (
     <div class={styles.container}>
       <div class={styles.header}>
-        <h1>预定列表</h1>
+        <h1>预订列表</h1>
         <div class={styles.headerButtons}>
+          <button class={styles.createButton} onClick={openCreateModal}>
+            新建预订
+          </button>
           <button class={styles.refreshButton} onClick={handleRefresh}>
             刷新
           </button>
@@ -297,7 +459,7 @@ const ReservationPage: Component = () => {
             </select>
           </div>
           <div class={styles.filterActions}>
-            <button 
+            <button
               class={styles.clearButton}
               onClick={() => {
                 setFilterDate("");
@@ -326,7 +488,7 @@ const ReservationPage: Component = () => {
           >
             <Show
               when={reservations() && reservations()!.length > 0}
-              fallback={<div class={styles.empty}>暂无预定记录</div>}
+              fallback={<div class={styles.empty}>暂无预订记录</div>}
             >
               <table class={styles.table}>
                 <thead>
@@ -377,12 +539,23 @@ const ReservationPage: Component = () => {
                               {reservation.status === "Requested" && (
                                 <button
                                   class={`${styles.actionButton} ${styles.approveButton}`}
-                                  onClick={() =>
-                                    updateReservationStatus(
-                                      reservation.id,
-                                      "Approved"
-                                    )
-                                  }
+                                  onClick={async () => {
+                                    const confirmed = await showConfirm(
+                                      "确定要确认这个预订吗？",
+                                      {
+                                        title: "确认预订",
+                                        confirmText: "确认",
+                                        cancelText: "取消",
+                                      }
+                                    );
+
+                                    if (confirmed) {
+                                      updateReservationStatus(
+                                        reservation.id,
+                                        "Approved"
+                                      );
+                                    }
+                                  }}
                                 >
                                   确认
                                 </button>
@@ -393,8 +566,17 @@ const ReservationPage: Component = () => {
                                 <>
                                   <button
                                     class={`${styles.actionButton} ${styles.cancelButton}`}
-                                    onClick={() => {
-                                      if (confirm("确定要取消这个预订吗？")) {
+                                    onClick={async () => {
+                                      const confirmed = await showConfirm(
+                                        "确定要取消这个预订吗？",
+                                        {
+                                          title: "取消预订",
+                                          confirmText: "取消预订",
+                                          cancelText: "返回",
+                                        }
+                                      );
+
+                                      if (confirmed) {
                                         updateReservationStatus(
                                           reservation.id,
                                           "Cancelled"
@@ -406,8 +588,17 @@ const ReservationPage: Component = () => {
                                   </button>
                                   <button
                                     class={`${styles.actionButton} ${styles.completeButton}`}
-                                    onClick={() => {
-                                      if (confirm("确定要完成这个预订吗？")) {
+                                    onClick={async () => {
+                                      const confirmed = await showConfirm(
+                                        "确定要完成这个预订吗？",
+                                        {
+                                          title: "完成预订",
+                                          confirmText: "完成",
+                                          cancelText: "取消",
+                                        }
+                                      );
+
+                                      if (confirmed) {
                                         updateReservationStatus(
                                           reservation.id,
                                           "Completed"
@@ -426,16 +617,31 @@ const ReservationPage: Component = () => {
                               )}
                             </>
                           ) : (
-                            // 非员工角色：显示取消和编辑按钮
+                            // 非员工角色：显示详情、取消和编辑按钮
                             <>
+                              <button
+                                class={styles.actionButton}
+                                onClick={() => openDetailModal(reservation)}
+                              >
+                                详情
+                              </button>
                               {["Requested", "Approved"].includes(
                                 reservation.status
                               ) ? (
                                 <>
                                   <button
                                     class={`${styles.actionButton} ${styles.cancelButton}`}
-                                    onClick={() => {
-                                      if (confirm("确定要取消这个预订吗？")) {
+                                    onClick={async () => {
+                                      const confirmed = await showConfirm(
+                                        "确定要取消这个预订吗？",
+                                        {
+                                          title: "取消预订",
+                                          confirmText: "取消预订",
+                                          cancelText: "返回",
+                                        }
+                                      );
+
+                                      if (confirmed) {
                                         updateReservationStatus(
                                           reservation.id,
                                           "Cancelled"
@@ -506,6 +712,101 @@ const ReservationPage: Component = () => {
               />
             </div>
 
+            <div class={styles.formGroup}>
+              <label>就餐人姓名</label>
+              <input
+                type="text"
+                value={editForm().name}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
+                }
+                placeholder="请输入姓名"
+              />
+            </div>
+
+            <div class={styles.formGroup}>
+              <label>就餐人电话</label>
+              <input
+                type="tel"
+                value={editForm().phone}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    phone: e.target.value,
+                  }))
+                }
+                placeholder="请输入电话号码"
+              />
+            </div>
+
+            <div class={styles.formGroup}>
+              <label>就餐人性别</label>
+              <div class={styles.genderGroup}>
+                <label class={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    name="editGender"
+                    checked={editForm().gender === "M"}
+                    onChange={() =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        gender: "M",
+                      }))
+                    }
+                  />
+                  <span>男</span>
+                </label>
+                <label class={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    name="editGender"
+                    checked={editForm().gender === "F"}
+                    onChange={() =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        gender: "F",
+                      }))
+                    }
+                  />
+                  <span>女</span>
+                </label>
+              </div>
+            </div>
+
+            <div class={styles.formGroup}>
+              <label>就餐人邮箱（选填）</label>
+              <input
+                type="email"
+                value={editForm().email}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    email: e.target.value,
+                  }))
+                }
+                placeholder="请输入邮箱地址"
+              />
+            </div>
+
+            <div class={styles.formGroup}>
+              <label>备注信息（选填）</label>
+              <textarea
+                value={editForm().comment}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    comment: e.target.value,
+                  }))
+                }
+                placeholder="请输入备注信息"
+                rows={3}
+                class={styles.textareaInput}
+              />
+            </div>
+
             <div class={styles.modalActions}>
               <button
                 class={`${styles.modalButton} ${styles.cancelModalButton}`}
@@ -524,6 +825,157 @@ const ReservationPage: Component = () => {
         </div>
       </Show>
 
+      {/* 新建预订对话框 */}
+      <Show when={showCreateModal()}>
+        <div class={styles.modal}>
+          <div class={styles.modalContent}>
+            <div class={styles.modalHeader}>
+              <h3>新建预订</h3>
+            </div>
+
+            <div class={styles.formGroup}>
+              <label>预计到达时间 *</label>
+              <input
+                type="datetime-local"
+                value={createForm().expectedArrivalTime}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    expectedArrivalTime: e.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div class={styles.formGroup}>
+              <label>人数 *</label>
+              <input
+                type="number"
+                min="1"
+                max="20"
+                value={createForm().tableSize}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    tableSize: parseInt(e.target.value) || 1,
+                  }))
+                }
+              />
+            </div>
+
+            <div class={styles.formGroup}>
+              <label>就餐人姓名 *</label>
+              <input
+                type="text"
+                value={createForm().name}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
+                }
+                placeholder="请输入姓名"
+              />
+            </div>
+
+            <div class={styles.formGroup}>
+              <label>就餐人电话 *</label>
+              <input
+                type="tel"
+                value={createForm().phone}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    phone: e.target.value,
+                  }))
+                }
+                placeholder="请输入电话号码"
+              />
+            </div>
+
+            <div class={styles.formGroup}>
+              <label>就餐人性别</label>
+              <div class={styles.genderGroup}>
+                <label class={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    name="createGender"
+                    checked={createForm().gender === "M"}
+                    onChange={() =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        gender: "M",
+                      }))
+                    }
+                  />
+                  <span>男</span>
+                </label>
+                <label class={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    name="createGender"
+                    checked={createForm().gender === "F"}
+                    onChange={() =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        gender: "F",
+                      }))
+                    }
+                  />
+                  <span>女</span>
+                </label>
+              </div>
+            </div>
+
+            <div class={styles.formGroup}>
+              <label>就餐人邮箱（选填）</label>
+              <input
+                type="email"
+                value={createForm().email}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    email: e.target.value,
+                  }))
+                }
+                placeholder="请输入邮箱地址"
+              />
+            </div>
+
+            <div class={styles.formGroup}>
+              <label>备注信息（选填）</label>
+              <textarea
+                value={createForm().comment}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    comment: e.target.value,
+                  }))
+                }
+                placeholder="请输入备注信息"
+                rows={3}
+                class={styles.textareaInput}
+              />
+            </div>
+
+            <div class={styles.modalActions}>
+              <button
+                class={`${styles.modalButton} ${styles.cancelModalButton}`}
+                onClick={closeCreateModal}
+              >
+                取消
+              </button>
+              <button
+                class={`${styles.modalButton} ${styles.saveButton}`}
+                onClick={saveCreate}
+              >
+                创建
+              </button>
+            </div>
+          </div>
+        </div>
+      </Show>
+
       {/* 详情对话框 */}
       <Show when={showDetailModal()}>
         <div class={styles.modalOverlay} onClick={closeDetailModal}>
@@ -532,69 +984,85 @@ const ReservationPage: Component = () => {
             <Show when={detailReservation()}>
               {(reservation) => (
                 <div class={styles.detailContent}>
-                  <div class={styles.detailRow}>
-                    <span class={styles.detailLabel}>客人姓名：</span>
-                    <span class={styles.detailValue}>
-                      {reservation().user.name}
-                    </span>
+                  {/* 就餐人信息块 */}
+                  <div class={styles.infoSection}>
+                    <h4 class={styles.sectionTitle}>就餐人信息</h4>
+                    <div class={styles.detailRow}>
+                      <span class={styles.detailLabel}>姓名：</span>
+                      <span class={styles.detailValue}>
+                        {reservation().name}
+                      </span>
+                    </div>
+                    <div class={styles.detailRow}>
+                      <span class={styles.detailLabel}>电话：</span>
+                      <span class={styles.detailValue}>
+                        {reservation().phone}
+                      </span>
+                    </div>
+                    <div class={styles.detailRow}>
+                      <span class={styles.detailLabel}>性别：</span>
+                      <span class={styles.detailValue}>
+                        {getGenderText(reservation().gender)}
+                      </span>
+                    </div>
+                    <div class={styles.detailRow}>
+                      <span class={styles.detailLabel}>邮箱：</span>
+                      <span class={styles.detailValue}>
+                        {reservation().email || "未填写"}
+                      </span>
+                    </div>
                   </div>
-                  <div class={styles.detailRow}>
-                    <span class={styles.detailLabel}>电话：</span>
-                    <span class={styles.detailValue}>
-                      {reservation().user.phone}
-                    </span>
-                  </div>
-                  <div class={styles.detailRow}>
-                    <span class={styles.detailLabel}>性别：</span>
-                    <span class={styles.detailValue}>
-                      {getGenderText(reservation().user.gender)}
-                    </span>
-                  </div>
-                  <div class={styles.detailRow}>
-                    <span class={styles.detailLabel}>邮箱：</span>
-                    <span class={styles.detailValue}>
-                      {reservation().user.email || '未填写'}
-                    </span>
-                  </div>
-                  <div class={styles.detailRow}>
-                    <span class={styles.detailLabel}>预计到达时间：</span>
-                    <span class={styles.detailValue}>
-                      {new Date(
-                        reservation().expectedArrivalTime
-                      ).toLocaleString("zh-CN", {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <div class={styles.detailRow}>
-                    <span class={styles.detailLabel}>就餐人数：</span>
-                    <span class={styles.detailValue}>
-                      {reservation().tableSize}人
-                    </span>
-                  </div>
-                  <div class={styles.detailRow}>
-                    <span class={styles.detailLabel}>预订状态：</span>
-                    <span class={styles.detailValue}>
-                      {getStatusText(reservation().status)}
-                    </span>
-                  </div>
-                  <div class={styles.detailRow}>
-                    <span class={styles.detailLabel}>创建时间：</span>
-                    <span class={styles.detailValue}>
-                      {new Date(reservation().created).toLocaleString("zh-CN", {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <Show when={reservation().updated}>
+
+                  {/* 预订信息块 */}
+                  <div class={styles.infoSection}>
+                    <h4 class={styles.sectionTitle}>预订信息</h4>
+                    <div class={styles.detailRow}>
+                      <span class={styles.detailLabel}>预计到达时间：</span>
+                      <span class={styles.detailValue}>
+                        {new Date(
+                          reservation().expectedArrivalTime
+                        ).toLocaleString("zh-CN", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div class={styles.detailRow}>
+                      <span class={styles.detailLabel}>就餐人数：</span>
+                      <span class={styles.detailValue}>
+                        {reservation().tableSize}人
+                      </span>
+                    </div>
+                    <div class={styles.detailRow}>
+                      <span class={styles.detailLabel}>备注信息：</span>
+                      <span class={styles.detailValue}>
+                        {reservation().comment || "未填写"}
+                      </span>
+                    </div>
+                    <div class={styles.detailRow}>
+                      <span class={styles.detailLabel}>预订状态：</span>
+                      <span class={styles.detailValue}>
+                        {getStatusText(reservation().status)}
+                      </span>
+                    </div>
+                    <div class={styles.detailRow}>
+                      <span class={styles.detailLabel}>创建时间：</span>
+                      <span class={styles.detailValue}>
+                        {new Date(reservation().created).toLocaleString(
+                          "zh-CN",
+                          {
+                            year: "numeric",
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </span>
+                    </div>
                     <div class={styles.detailRow}>
                       <span class={styles.detailLabel}>更新时间：</span>
                       <span class={styles.detailValue}>
@@ -609,6 +1077,37 @@ const ReservationPage: Component = () => {
                           }
                         )}
                       </span>
+                    </div>
+                  </div>
+
+                  {/* 预订人信息块 - 只有员工可见 */}
+                  <Show when={isEmployee()}>
+                    <div class={styles.infoSection}>
+                      <h4 class={styles.sectionTitle}>预订人信息</h4>
+                      <div class={styles.detailRow}>
+                        <span class={styles.detailLabel}>姓名：</span>
+                        <span class={styles.detailValue}>
+                          {reservation().user.name}
+                        </span>
+                      </div>
+                      <div class={styles.detailRow}>
+                        <span class={styles.detailLabel}>电话：</span>
+                        <span class={styles.detailValue}>
+                          {reservation().user.phone}
+                        </span>
+                      </div>
+                      <div class={styles.detailRow}>
+                        <span class={styles.detailLabel}>性别：</span>
+                        <span class={styles.detailValue}>
+                          {getGenderText(reservation().user.gender)}
+                        </span>
+                      </div>
+                      <div class={styles.detailRow}>
+                        <span class={styles.detailLabel}>邮箱：</span>
+                        <span class={styles.detailValue}>
+                          {reservation().user.email || "未填写"}
+                        </span>
+                      </div>
                     </div>
                   </Show>
                 </div>
@@ -645,15 +1144,15 @@ function getStatusText(status: string): string {
 }
 
 function getGenderText(gender?: string): string {
-  if (!gender) return '未填写';
-  
+  if (!gender) return "未填写";
+
   switch (gender.toUpperCase()) {
-    case 'M':
-    case 'MALE':
-      return '男';
-    case 'F':
-    case 'FEMALE':
-      return '女';
+    case "M":
+    case "MALE":
+      return "男";
+    case "F":
+    case "FEMALE":
+      return "女";
     default:
       return gender;
   }
