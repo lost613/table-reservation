@@ -78,6 +78,29 @@ pnpm test:backend    # 运行后端测试
 pnpm test:frontend   # 运行前端测试
 ```
 
+## 开发环境初始化
+
+下面步骤用于在本地开发时准备 Couchbase 与管理员账号。
+
+1) 使用 Docker 部署 Couchbase 容器
+
+```bash
+docker-compose up -d couchbase
+```
+
+2) 初始化 Couchbase（参考官方文档）
+
+- 官方 Quickstart: https://hub.docker.com/_/couchbase#quickstart-with-couchbase-server-and-docker
+- 启动容器后，访问 http://localhost:8091 进入 Couchbase Web 控制台，按照引导完成集群初始化（设置管理员、内存配额、等）。
+- 创建 Bucket：table-reservation，并记录连接信息以便后端配置。
+
+3) 初始化管理员账号（二选一）
+
+- 方式A：登录 Couchbase 网页版，直接插入新用户数据，将其设为管理员。
+- 方式B：项目整体启动后，先在前端正常注册一个普通用户，然后到 Couchbase 网页版将该用户修改为管理员。
+
+> 注意：用户数据中 isEmployee 字段为 true 时，表示该用户为管理员身份。
+
 ## Docker 部署
 
 ### 使用 Docker Compose
