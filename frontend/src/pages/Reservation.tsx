@@ -24,7 +24,7 @@ import { showToast, showConfirm } from "../utils/toast";
 
 // 创建 URQL 客户端
 const client = createClient({
-  url: "/api/graphql", // 使用 vite 配置的代理路径
+  url: `${import.meta.env.VITE_API_URL}/graphql`, // 直接使用环境变量指定的后端地址
   exchanges: [cacheExchange, fetchExchange],
   fetchOptions: () => {
     const token = localStorage.getItem("access_token");

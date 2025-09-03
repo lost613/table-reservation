@@ -11,8 +11,6 @@ services:
       - "3000:80"
     networks:
       - app-network
-    environment:
-      - VITE_API_URL=/api  # 前端 API 地址配置
     depends_on:
       - backend
     restart: unless-stopped
